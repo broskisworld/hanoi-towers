@@ -5,12 +5,15 @@ const RIGHT = 2;
 class HanoiTowers {
   config;
   state;
+  moveCt = 0;
 
   constructor(options = {}) {
     this.config = {
       size: 5,
-      moveDelayMs: 200,
-      printAfterMoves: true
+      title: 'Towers of Hanoi',
+      interactive: true,
+      printTitle: true,
+      moveDelayMs: 200
     }
 
     Object.keys(options).forEach((key) => this.config[key] = options[key]);
@@ -27,28 +30,54 @@ class HanoiTowers {
       console.log(`disc of size ${this.state[fromStack].slice(-1)} from stack ${fromStack} cannot go on stack ${toStack} of size ${this.state[toStack].slice(-1)}`);
       return false;
     }
-    // TODO size comparison
-    // console.log(`A to len: ${this.state[toStack].length}`)
-    // console.log(`A from len: ${this.state[fromStack].length}`)
     this.state[toStack].push(this.state[fromStack].pop());
-    // console.log(`B to len: ${this.state[toStack].length}`)
-    // console.log(`B from len: ${this.state[fromStack].length}`)
 
-    if(this.config.printAfterMoves)
+    if(this.config.interactive) {
       this.print();
+      if(this.config.moveDelayMs)
+        await HanoiTowers._sleep(this.config.moveDelayMs);
+    }
 
-    if(this.config.moveDelayMs)
-      await HanoiTowers._sleep(this.config.moveDelayMs);
+    this.moveCt++;
 
     return true;
+  }
+
+  async moveAll(from, to) {
+    await this.moveMultiple(this.state[from].length, from, to);
+  }
+
+  async moveMultiple(numDiscs, from, to) {
+    let other = 3 - (from + to); // black magic arithmetic to figure out other "safe" stack
+  
+    if(numDiscs == 1) {
+      await this.move(from, to);
+    } else {
+      // move the 2 high stack from "from" to auxiliary "other stack", using "to" stack as auxiliary
+      await this.moveMultiple(numDiscs - 1, from, other)
+      
+      // move the base piece to the destination
+      await this.move(from, to);
+  
+      // "from" has now become the auxiliary "other" stack for the 2 high stack
+      await this.moveMultiple(numDiscs - 1, other, to)
+    }
   }
 
   print() {
     const STACK_PADDING = 1;
     const STACK_HALF = this.config.size;
     const STACK_WIDTH = 1 + (2*this.config.size);
+    const PRINT_WIDTH = STACK_WIDTH + 1 + STACK_WIDTH + 1 + STACK_WIDTH;
 
     let output = '';
+
+    if(this.config.printTitle) {
+      output += ' '.repeat((PRINT_WIDTH - this.config.title.length) / 2);
+      output += this.config.title;
+      output += ' '.repeat((PRINT_WIDTH - this.config.title.length) / 2);
+      output += '\n';
+    }
     output += '\n';
 
     for(let i = this.config.size; i > -1; i--) {
@@ -69,13 +98,19 @@ class HanoiTowers {
           output += ' '.repeat(STACK_HALF);
         }
 
-        // if(stack != 2) {
-        //   output += ' '.repeat(STACK_PADDING);
-        // }
+        if(stack != 2) {
+          output += ' '.repeat(STACK_PADDING);
+        }
       }
       output += '\n';
     }
+    output += 'H'.repeat(STACK_WIDTH);
+    output += ' ';
+    output += 'H'.repeat(STACK_WIDTH);
+    output += ' ';
+    output += 'H'.repeat(STACK_WIDTH);
     output += '\n';
+    output += `Size: ${this.config.size}  Step: ${String(this.moveCt).padStart(2)}`;
 
     console.log('\n'.repeat(40));
     console.log(output);
@@ -106,39 +141,15 @@ function sleep(ms) {
   })
 }
 
-async function moveMultiple(game, numDiscs, from, to) {
-  let other = 3 - (from + to); // black magic arithmetic to figure out other "safe" stack
-
-  if(numDiscs == 1) {
-    await game.move(from, to);
-  } else if(numDiscs == 2) {
-    await game.move(from, other);
-    await game.move(from, to);
-    await game.move(other, to);
-  } else if(numDiscs == 3) {
-    // move the 2 high stack from "from" to auxiliary "other stack", using "to" stack as auxiliary
-    await game.move(from, to);
-    await game.move(from, other);
-    await game.move(to, other);
-    
-    // move the base piece to the destination
-    await game.move(from, to);
-
-    // "from" has now become the auxiliary "other" stack for the 2 high stack
-    await game.move(other, from);
-    await game.move(other, to);
-    await game.move(from, to);
-  }
-}
-
 async function main() {
   let towers = new HanoiTowers({
-    size: 3
+    size: 9,
+    moveDelayMs: 3
   });
   towers.print();
   
   // while(await towers.move(MIDDLE, LEFT));
 
-  await moveMultiple(towers, 3, MIDDLE, LEFT);
+  await towers.moveAll(MIDDLE, LEFT);
 }
 main();
