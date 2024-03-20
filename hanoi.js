@@ -31,14 +31,13 @@ class HanoiTowers {
       return false;
     }
     this.state[toStack].push(this.state[fromStack].pop());
+    this.moveCt++;
 
     if(this.config.interactive) {
       this.print();
       if(this.config.moveDelayMs)
         await HanoiTowers._sleep(this.config.moveDelayMs);
     }
-
-    this.moveCt++;
 
     return true;
   }
