@@ -18,5 +18,5 @@ async function main() {
 main();
 ```
 
-https://github.com/broskisworld/hanoi-towers/assets/24487883/66a8a303-d333-40d2-9af6-178d90316dbb
+https://github.com/broskisworld/hanoi-towers/assets/24487883/ed9b45e3-761e-4efd-bb29-b5f76f5d0fb5
 
